@@ -1,0 +1,1 @@
+This is a project including the concepts of authentication with email verification and password change otp generation using modern mern stack technologies.
