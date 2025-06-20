@@ -25,7 +25,7 @@ export const register = async (req, res) => {
             from: process.env.SENDER_EMAIL,
             to: email,
             subject: "Welcome to Authenticator",
-            text: `You account has successfuly been created on Authenticator with the email Id: ${email}`
+            text: `You account has successfully been created on Authenticator with the email Id: ${email}`
         }
         await transporter.sendMail(mailOptions);
 
@@ -84,10 +84,30 @@ export const sendVerifyOtp = async (req, res) => {
             from: process.env.SENDER_EMAIL,
             to: user.email,
             subject: "Email Verification",
-            text: `Your email verification otp is ${otp}. Please this otp to verify your email.`
+            text: `Your email verification OTP is ${otp}. Please this OTP to verify your email.`
         };
         await transporter.sendMail(mailOptions);
-        return res.json({success: true, message: "Verification otp has been sent!"});
+        return res.json({success: true, message: "Verification OTP has been sent!"});
+    } catch (error) {
+        return res.json({success: false, message: error.message});
+    }
+}
+export const verifyEmail = async(req, res) => {
+    const {userId, otp} = req.body;
+    try {
+        if(!userId || !otp) return res.json({success: false, message: "Missing details!"});
+        const user = await userModel.findById(userId);
+        if(!user) return res.json({success: false,message: "User not found!"});
+        if(user.otp === '' || !user.opt === otp){
+            return res.json({success: false, message: "Invalid OTP!"});
+        }
+        if(user.verifyOtpExpireAt < Date.now()) return res.json({success: false, message: "OTP expired!"});
+
+        user.isAccountVerified = true;
+        user.verifyOtp = ''
+        user.verifyOtpExpireAt = 0
+        await user.save();
+        return res.json({success: true, message: "Account verified successfully!"})
     } catch (error) {
         return res.json({success: false, message: error.message});
     }
