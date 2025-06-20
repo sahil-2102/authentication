@@ -25,7 +25,7 @@ export const register = async (req, res) => {
             from: process.env.SENDER_EMAIL,
             to: email,
             subject: "Welcome to Authenticator",
-            text: `You account has successfuly been created on Authenticator with the email ${email}`
+            text: `You account has successfuly been created on Authenticator with the email Id: ${email}`
         }
         await transporter.sendMail(mailOptions);
 
@@ -65,6 +65,29 @@ export const logout = async (req, res) => {
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
         })
         return res.json({success: true, message: "Logged out!"});
+    } catch (error) {
+        return res.json({success: false, message: error.message});
+    }
+}
+export const sendVerifyOtp = async (req, res) => {
+    const {userId} = req.body;
+    try {
+        const user = await userModel.findById(userId);
+        if(user.isAccountVerified){
+            return res.json({success: false, message: "Acoount already verified!"});
+        }
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        user.verifyOtp = otp;
+        user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000
+        await user.save();
+        const mailOptions = {
+            from: process.env.SENDER_EMAIL,
+            to: user.email,
+            subject: "Email Verification",
+            text: `Your email verification otp is ${otp}. Please this otp to verify your email.`
+        };
+        await transporter.sendMail(mailOptions);
+        return res.json({success: true, message: "Verification otp has been sent!"});
     } catch (error) {
         return res.json({success: false, message: error.message});
     }
