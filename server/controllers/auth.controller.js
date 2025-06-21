@@ -1,5 +1,5 @@
 import userModel from "../models/user.model.js";
-import bcrypt from "bcryptjs";
+import bcrypt, { hash } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import transporter from "../config/nodemailer.js";
 export const register = async (req, res) => {
@@ -143,6 +143,34 @@ export const sendResetOtp = async (req, res) => {
         await transporter.sendMail(mailOptions);
         return res.json({success: false, message: "Password reset otp sent!"});
    } catch (error) {
-        return register.json({success: false, message: error.message});
+        return res.json({success: false, message: error.message});
    }
+}
+export const resetPassword = async (res, req) => {
+    try {
+        const {email, otp, newPassword} = req.body;
+        if(!email || !otp || !newPassword){
+            return res.json({success: false, message: "All fields are required!"});
+        }
+        const user = await userModel.find({email});
+        if(!user){
+            return res.json({success: false, message: "user not found!"});
+        }
+        if(user.resetOtp === '' || user.resetOtp !== otp){
+            return res.json({success: false, message: "Invalid OTP"});
+        }
+        if(user.resetOtpExpireAt < Date.now()){
+            return res.json({success: false, message: "OTP Expired!"});
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.resetOtp = '';
+        user.resetOtpExpireAt = 0;
+        await user.save();
+        return res.json({success: false, message: "You password has been changed successfully!"});
+
+
+    } catch (error) {
+        return res.json({success: false, message: error.message});
+    }
 }
