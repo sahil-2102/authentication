@@ -7,7 +7,7 @@ export const register = async (req, res) => {
     if(!name || !email || !password) return res.json({success: false,message: "All fields are required"});
     try {
         const existingUser = await userModel.findOne({email});
-        if(existingUser) return res.json({success: false, message: "User already exists!"});
+        if(existingUser) return res.json({success: false, message: "Email already exists!"});
         const hashedPassword = await bcrypt.hash(password, 10);
         const User = new userModel({name, email, password: hashedPassword});
         await User.save();
