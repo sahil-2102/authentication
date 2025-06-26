@@ -29,7 +29,7 @@ export const register = async (req, res) => {
         }
         await transporter.sendMail(mailOptions);
 
-        return res.json({success: true});
+        return res.json({success: true, message: "Account created successfully!"});
     } catch (error) {
         res.json({success: false, message: error.message});
     }
